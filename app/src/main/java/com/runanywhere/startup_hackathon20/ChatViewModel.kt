@@ -1,5 +1,7 @@
 package com.runanywhere.startup_hackathon20
 
+// --- FIX: Added missing import ---
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.runanywhere.sdk.public.RunAnywhere
@@ -69,6 +71,30 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    // ADD THIS NEW FUNCTION INSIDE ChatViewModel
+    /**
+     * Gets a single, non-streaming response from the on-device LLM.
+     * This is perfect for utility prompts (like crisis detection or script generation).
+     */
+    suspend fun getAIResponse(prompt: String): String {
+        if (_currentModelId.value == null) {
+            _statusMessage.value = "Please load a model first"
+            return "ERROR: MODEL NOT LOADED"
+        }
+
+        return try {
+            val responseBuilder = StringBuilder()
+            // Generate the response and collect all tokens into one string
+            RunAnywhere.generateStream(prompt).collect { token ->
+                responseBuilder.append(token)
+            }
+            // Return the final, complete response
+            responseBuilder.toString()
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "getAIResponse failed", e)
+            "ERROR: ${e.message}"
+        }
+    }
     fun loadModel(modelId: String) {
         viewModelScope.launch {
             try {
